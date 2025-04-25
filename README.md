@@ -8,3 +8,9 @@ To build it, just launch from the source folder:
 ```
 $ make
 ```
+
+If you want to link ncurses statically, build your ncurses library apart and then build using the following:
+
+```
+make static-custom NCURSES_STATIC_PATH=/path/to/ncurses/static/lib/
+```

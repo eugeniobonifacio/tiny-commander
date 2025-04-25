@@ -17,8 +17,15 @@ OBJ = $(SRC:.c=.o)
 # Flags di compilazione
 CFLAGS = -Wall -Wextra -pedantic -O2
 
+# Percorso della libreria ncurses statica (può essere ridefinito dall'utente)
+NCURSES_STATIC_PATH ?= ../static-lib/libncurses-src/lib
+
 # Librerie
+# Utilizzo dinamico di ncurses per la build normale
 LIBS = -lncurses
+
+# Libreria statica ncurses per build statica
+NCURSES_STATIC_LIB = $(NCURSES_STATIC_PATH)/libncursesw.a
 
 # Determina il sistema operativo
 UNAME := $(shell uname)
@@ -80,19 +87,24 @@ $(PROG): $(OBJ)
 
 # Pulizia
 clean:
-	rm -f $(PROG) $(OBJ) 
+	rm -f $(PROG) $(PROG)_static $(PROG)_musl $(PROG)_alpine $(OBJ) 
 
 # Installazione
 install: $(PROG)
 	mkdir -p $(DESTDIR)/usr/local/bin
 	cp $(PROG) $(DESTDIR)/usr/local/bin/
 
+# Compilazione statica con libreria ncurses personalizzata
+static-custom: $(SRC)
+	$(CC) $(CFLAGS) -o $(PROG)_static $< $(NCURSES_STATIC_LIB)
+
 # Compilazione statica (se supportata)
 static: $(SRC)
 ifeq ($(STATIC_SUPPORTED), 1)
 	$(CC) $(CFLAGS) -o $(PROG)_static $< -static $(LIBS)
 else
-	@echo "La compilazione statica non è supportata su questa piattaforma"
+	@echo "La compilazione statica con -static non è supportata su questa piattaforma"
+	@echo "Prova 'make static-custom' per linkare direttamente la libreria ncurses statica"
 endif
 
 # Compilazione per debug
@@ -120,6 +132,7 @@ version:
 	@echo "Tiny Commander v0.1"
 	@echo "Compilatore: $(CC) $(shell $(CC) --version | head -n 1)"
 	@echo "Sistema: $(UNAME)"
+	@echo "Percorso libreria ncurses statica: $(NCURSES_STATIC_PATH)"
 
 # Phony targets
-.PHONY: all clean install static debug musl docker version
+.PHONY: all clean install static static-custom debug musl docker version
